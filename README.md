@@ -1471,3 +1471,6 @@ railway-ticketing-blockchain/
 &copy; 2026 **Rajib Das**  
 M.Sc. in Cyber Security &bull; Bangladesh University of Professionals (BUP)  
 [rajib.24525201034@student.bup.edu.bd](mailto:rajib.24525201034@student.bup.edu.bd)
+
+## License
+This project is licensed under the MIT License - see the LICENSE file for details.
