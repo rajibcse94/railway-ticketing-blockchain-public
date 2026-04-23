@@ -9,27 +9,29 @@ A production-grade railway ticketing platform built for Bangladesh Railway. Ever
 
 1. [System Overview](#1-system-overview)
 2. [System Architecture — Layered View](#2-system-architecture--layered-view)
-3. [Architecture — Data Flow Diagram](#3-architecture--data-flow-diagram)
-4. [Architecture — Component Diagram](#4-architecture--component-diagram)
-5. [Technology Stack](#5-technology-stack)
-6. [Fresh Ubuntu 22.04 Setup — Full Guide](#6-fresh-ubuntu-2204-setup--full-guide)
-7. [Environment Variables](#7-environment-variables)
-8. [Start / Stop the System](#8-start--stop-the-system)
-9. [Seed the Database](#9-seed-the-database)
-10. [Default Logins & Ports](#10-default-logins--ports)
-11. [User Roles & Permissions](#11-user-roles--permissions)
-12. [How the System Works — End to End](#12-how-the-system-works--end-to-end)
-13. [Ticket Booking Flowchart](#13-ticket-booking-flowchart)
-14. [Refund & Cancellation Policy](#14-refund--cancellation-policy)
-15. [Real-Time Updates — WebSocket](#15-real-time-updates--websocket)
-16. [Notification System](#16-notification-system)
-17. [Blockchain — How It Actually Works](#17-blockchain--how-it-actually-works)
-18. [Security Features](#18-security-features)
-19. [API Reference](#19-api-reference)
-20. [Seed Scripts](#20-seed-scripts)
-21. [Hyperledger Fabric (Optional)](#21-hyperledger-fabric-optional)
-22. [Production Deployment](#22-production-deployment)
-23. [Project Structure](#23-project-structure)
+3. [Architecture — What the Blockchain Stores](#3-architecture--what-the-blockchain-stores)
+4. [Architecture — Data Flow Diagram](#4-architecture--data-flow-diagram)
+5. [Architecture — Component Diagram](#5-architecture--component-diagram)
+6. [Architecture — Cloud Deployment Environment](#6-architecture--cloud-deployment-environment)
+7. [Technology Stack](#7-technology-stack)
+8. [Fresh Ubuntu 22.04 Setup — Full Guide](#8-fresh-ubuntu-2204-setup--full-guide)
+9. [Environment Variables](#9-environment-variables)
+10. [Start / Stop the System](#10-start--stop-the-system)
+11. [Seed the Database](#11-seed-the-database)
+12. [Default Logins & Ports](#12-default-logins--ports)
+13. [User Roles & Permissions](#13-user-roles--permissions)
+14. [How the System Works — End to End](#14-how-the-system-works--end-to-end)
+15. [Ticket Booking Flowchart](#15-ticket-booking-flowchart)
+16. [Refund & Cancellation Policy](#16-refund--cancellation-policy)
+17. [Real-Time Updates — WebSocket](#17-real-time-updates--websocket)
+18. [Notification System](#18-notification-system)
+19. [Blockchain — How It Actually Works](#19-blockchain--how-it-actually-works)
+20. [Security Features](#20-security-features)
+21. [API Reference](#21-api-reference)
+22. [Seed Scripts](#22-seed-scripts)
+23. [Hyperledger Fabric (Optional)](#23-hyperledger-fabric-optional)
+24. [Production Deployment](#24-production-deployment)
+25. [Project Structure](#25-project-structure)
 
 ---
 
@@ -46,6 +48,7 @@ A production-grade railway ticketing platform built for Bangladesh Railway. Ever
 | **Hyperledger Fabric** | Enterprise permissioned blockchain layer (optional, configurable) |
 | **Email Service** | Gmail SMTP — HTML notifications on train cancel / reschedule |
 | **WebSocket** | Socket.IO — admin dashboard updates instantly on any passenger action |
+| **Cloud** | KVM VPS (Ubuntu 22.04) — Docker-orchestrated, Nginx reverse proxy, SSL |
 
 ---
 
@@ -64,7 +67,7 @@ A production-grade railway ticketing platform built for Bangladesh Railway. Ever
 ║  • Search Trains ║  • Mark Used         ║  • Ticket Management               ║
 ║  • Select Seats  ║  • Flag Suspicious   ║  • User Management                 ║
 ║  • Book Ticket   ║                      ║  • Revenue Reports                 ║
-║  • Cancel Ticket ║                      ║  • Blockchain Ledger               ║
+║  • Cancel Ticket ║                      ║  • Blockchain Ledger (Live)        ║
 ║  • QR Ticket     ║                      ║  • Notifications                   ║
 ║  • Notifications ║                      ║  • Real-time Socket.IO             ║
 ║  • Wallet View   ║                      ║  • Refund Policy                   ║
@@ -78,7 +81,7 @@ A production-grade railway ticketing platform built for Bangladesh Railway. Ever
 ║  • CORS Whitelist (allowed origins only)                                    ║
 ║  • Helmet (X-Frame, XSS, HSTS, CSP security headers)                       ║
 ║  • Morgan (HTTP request logging)                                            ║
-║  • Socket.IO Server (real-time event broadcasting)                         ║
+║  • Socket.IO Server (real-time event broadcasting to admin dashboard)      ║
 ║  • Route Mounting:                                                          ║
 ║      /api/auth          → authRoutes                                        ║
 ║      /api/passenger     → passengerRoutes                                   ║
@@ -107,20 +110,20 @@ A production-grade railway ticketing platform built for Bangladesh Railway. Ever
 ║                    LAYER 4 — BUSINESS LOGIC LAYER                           ║
 ║                           (Controllers)                                     ║
 ╠════════════════════╦══════════════════╦══════════════════╦══════════════════╣
-║ authController     ║passengerCtrl     ║ adminController  ║ inspectorCtrl   ║
+║ authController     ║ passengerCtrl    ║ adminController  ║ inspectorCtrl    ║
 ║                    ║                  ║                  ║                  ║
-║ • register         ║ • searchTrains   ║ • manageTrains   ║ • verifyTicket  ║
-║ • login            ║ • getSeats       ║ • manageRoutes   ║ • markUsed      ║
-║ • MFA setup/verify ║ • bookTicket     ║ • getTickets     ║ • flagTicket    ║
-║ • refreshToken     ║ • cancelTicket   ║ • cancelTrain    ║                 ║
-║ • OTP send/verify  ║ • getMyTickets   ║ • notifyUsers    ║superAdminCtrl   ║
-║                    ║ • QR generate    ║ • revenueReport  ║                 ║
-║ Emits:             ║ • waitlist       ║ • refundPolicy   ║ • createUser    ║
-║  user:registered   ║ • notifications  ║                  ║ • editUser      ║
-║  user:login        ║                  ║ Emits:           ║ • deleteUser    ║
-║                    ║ Emits:           ║  (train events)  ║ • revenueView   ║
-║                    ║  ticket:booked   ║                  ║                 ║
-║                    ║  ticket:cancelled║                  ║                 ║
+║ • register         ║ • searchTrains   ║ • manageTrains   ║ • verifyTicket   ║
+║ • login            ║ • getSeats       ║ • manageRoutes   ║ • markUsed       ║
+║ • MFA setup/verify ║ • bookTicket     ║ • getTickets     ║ • flagTicket     ║
+║ • refreshToken     ║ • cancelTicket   ║ • cancelTrain    ║                  ║
+║ • OTP send/verify  ║ • getMyTickets   ║ • notifyUsers    ║ superAdminCtrl   ║
+║                    ║ • QR generate    ║ • revenueReport  ║                  ║
+║ Emits:             ║ • waitlist       ║ • refundPolicy   ║ • createUser     ║
+║  user:registered   ║ • notifications  ║                  ║ • editUser       ║
+║  user:login        ║                  ║                  ║ • deleteUser     ║
+║                    ║ Emits:           ║                  ║ • revenueView    ║
+║                    ║  ticket:booked   ║                  ║                  ║
+║                    ║  ticket:cancelled║                  ║                  ║
 ╚════════════════════╩══════════════════╩══════════════════╩══════════════════╝
          │
          ▼
@@ -136,7 +139,7 @@ A production-grade railway ticketing platform built for Bangladesh Railway. Ever
 ║  • recordCancellation    ║  refundCalculator.js  ║  captureLocation.js      ║
 ║    OnChain               ║                       ║                          ║
 ║  • recordUserRegistration║  • Calculate refund % ║  • IP → city/country     ║
-║  • recordUserLogin       ║  • Apply policy       ║  • Store per-login       ║
+║  • recordUserLogin       ║  • Apply policy rules ║  • Store per-login       ║
 ║  • getTransactionHistory ║  • Check hours until  ║  • GPS coordinates       ║
 ║  • getBlockchainBalance  ║    departure          ║                          ║
 ╚══════════════════════════╩═══════════════════════╩═══════════════════════════╝
@@ -164,7 +167,104 @@ A production-grade railway ticketing platform built for Bangladesh Railway. Ever
 
 ---
 
-## 3. Architecture — Data Flow Diagram
+## 3. Architecture — What the Blockchain Stores
+
+Every event in the system mines a real SHA-256 PoW block. The block contains a transaction with the full event data — permanently immutable.
+
+```
+╔══════════════════════════════════════════════════════════════════════════════╗
+║              WHAT GETS STORED IN THE BLOCKCHAIN                             ║
+╠══════════════╦═══════════════════════════════════════════════════════════════╣
+║  EVENT       ║  DATA STORED INSIDE THE BLOCK TRANSACTION                   ║
+╠══════════════╬═══════════════════════════════════════════════════════════════╣
+║              ║  type         : "USER_REGISTRATION"                         ║
+║  NEW USER    ║  txid         : SHA-256(userId + email + timestamp)         ║
+║  REGISTERS   ║  user_id      : MongoDB ObjectId of the new user            ║
+║              ║  name         : Full name                                   ║
+║              ║  email        : Email address                               ║
+║              ║  role         : "passenger"                                 ║
+║              ║  mfa          : MFA enabled true/false                      ║
+║              ║  ip           : Registration IP address                     ║
+║              ║  timestamp    : Unix timestamp                              ║
+╠══════════════╬═══════════════════════════════════════════════════════════════╣
+║              ║  type         : "USER_LOGIN"                                ║
+║  USER        ║  txid         : SHA-256(userId + email + timestamp)         ║
+║  LOGS IN     ║  user_id      : MongoDB ObjectId                            ║
+║              ║  name         : Full name                                   ║
+║              ║  email        : Email address                               ║
+║              ║  role         : passenger / admin / inspector               ║
+║              ║  ip           : Login IP address                            ║
+║              ║  timestamp    : Unix timestamp                              ║
+╠══════════════╬═══════════════════════════════════════════════════════════════╣
+║              ║  type         : "TICKET_BOOKING"                            ║
+║  TICKET      ║  txid         : SHA-256(ticket# + passengerId + timestamp)  ║
+║  BOOKED      ║  ticket_number: TICKET-{timestamp}                          ║
+║              ║  passenger_id : MongoDB ObjectId                            ║
+║              ║  passenger_name: Full name                                  ║
+║              ║  train_number : e.g. "711"                                  ║
+║              ║  train_name   : e.g. "Subarna Express"                      ║
+║              ║  from_station : Boarding station                            ║
+║              ║  to_station   : Alighting station                           ║
+║              ║  journey_date : YYYY-MM-DD                                  ║
+║              ║  carriage_name: e.g. "Shovon-1"                             ║
+║              ║  seat_numbers : [5, 6]                                      ║
+║              ║  amount       : Fare paid (৳)                               ║
+║              ║  data_hash    : SHA-256 integrity hash of ticket            ║
+║              ║  timestamp    : Unix timestamp                              ║
+╠══════════════╬═══════════════════════════════════════════════════════════════╣
+║              ║  type            : "TICKET_CANCELLATION"                    ║
+║  TICKET      ║  txid            : SHA-256(ticket# + passengerId + ts)      ║
+║  CANCELLED   ║  ticket_number   : Original ticket number                   ║
+║              ║  passenger_id    : MongoDB ObjectId                         ║
+║              ║  passenger_name  : Full name                                ║
+║              ║  train_number    : Train number                             ║
+║              ║  journey_date    : YYYY-MM-DD                               ║
+║              ║  from_station    : Boarding station                         ║
+║              ║  to_station      : Alighting station                        ║
+║              ║  reason          : Cancellation reason text                 ║
+║              ║  original_amount : Original fare paid (৳)                   ║
+║              ║  refund_amount   : Refund credited (৳)                       ║
+║              ║  refund_percentage: e.g. 80.0                               ║
+║              ║  timestamp       : Unix timestamp                           ║
+╠══════════════╬═══════════════════════════════════════════════════════════════╣
+║              ║  type     : "payment"                                       ║
+║  WALLET      ║  txid     : Transaction ID                                  ║
+║  PAYMENT     ║  sender   : User wallet ID                                  ║
+║              ║  receiver : "railway_admin"                                 ║
+║              ║  amount   : Amount deducted (৳)                             ║
+║              ║  timestamp: Unix timestamp                                  ║
+╚══════════════╩═══════════════════════════════════════════════════════════════╝
+
+  EVERY BLOCK ALSO CONTAINS A COINBASE TRANSACTION:
+  ┌──────────────────────────────────────────────┐
+  │  { type: "coinbase", txid: "...", amount: 5000000000 }  │
+  └──────────────────────────────────────────────┘
+
+  BLOCK HEADER (each block):
+  ┌──────────────────────────────────────────────────────────┐
+  │  prevBlockHash  : hash of the previous block             │
+  │  merkleRoot     : SHA-256 root of all transactions       │
+  │  timestamp      : Unix time of mining                    │
+  │  nonce          : incremented until hash starts with 7482│
+  │  blockHash      : SHA-256(header) — starts with "7482"   │
+  └──────────────────────────────────────────────────────────┘
+
+  OFF-CHAIN vs ON-CHAIN SPLIT:
+  ┌─────────────────────────────┬──────────────────────────────────────┐
+  │  MongoDB (Off-chain)        │  Python Blockchain (On-chain)        │
+  ├─────────────────────────────┼──────────────────────────────────────┤
+  │  Full ticket document       │  Ticket booking event + hash         │
+  │  Full user profile          │  User registration + login events    │
+  │  Train/route/station data   │  Cancellation + refund record        │
+  │  Notifications              │  Payment transactions                │
+  │  OTPs, waitlists, logs      │  Immutable PoW-secured chain         │
+  │  Mutable — can be queried   │  Append-only — tamper-proof          │
+  └─────────────────────────────┴──────────────────────────────────────┘
+```
+
+---
+
+## 4. Architecture — Data Flow Diagram
 
 ```
   PASSENGER ACTION                     ADMIN DASHBOARD
@@ -184,7 +284,10 @@ A production-grade railway ticketing platform built for Bangladesh Railway. Ever
   │  5. Save Ticket to MongoDB      │──────► MongoDB :27017
   │  6. Emit ticket:booked socket   │──────► Admin Dashboard (instant)
   │  7. Mine block on blockchain    │──────► Python Blockchain :5001
-  │     (non-blocking)              │         (TICKET_BOOKING tx)
+  │     (non-blocking, async)       │         → TICKET_BOOKING tx built
+  │                                 │         → Added to mempool
+  │                                 │         → Nonce++ until hash=7482...
+  │                                 │         → Block appended to chain
   │  8. Submit to Fabric (optional) │──────► Hyperledger Fabric :7051
   │  9. Return ticket + QR code     │
   └─────────────────────────────────┘
@@ -216,36 +319,39 @@ A production-grade railway ticketing platform built for Bangladesh Railway. Ever
 
   ──────────────────────────────────────────────────────────────────
 
-  BLOCKCHAIN MINING FLOW (every booking / cancellation / login)
-  ─────────────────────────────────────────────────────────────
-  Backend → POST /api/record/ticket  →  Python Blockchain
-                                              │
-                                    Build transaction dict
-                                    {type: TICKET_BOOKING,
-                                     txid: SHA256(data+ts),
-                                     ticket_number, passenger,
-                                     train, route, date, amount,
-                                     data_hash}
-                                              │
-                                    Add to mempool
-                                              │
-                                    mine_next_block()
-                                              │
-                                    Increment nonce until
-                                    SHA256(header) starts with 7482
-                                              │
-                                    Append block to blockchain.json
-                                              │
-                                    Return {blockHeight, blockHash}
-                                              │
-                                    Backend logs:
-                                    "[BLOCKCHAIN] Ticket TICKET-xxx
-                                     → block #N hash=7482abc..."
+  BLOCKCHAIN MINING FLOW
+  ──────────────────────
+  Any trigger (register / login / book / cancel)
+       │
+       ▼
+  Backend POST → Python blockchain /api/record/*
+       │
+       ▼
+  Build transaction dict
+  { type, txid: SHA256(key_fields+ts), ...full event data }
+       │
+       ▼
+  Add to mempool.json
+       │
+       ▼
+  mine_next_block()
+       │
+       ▼
+  Increment nonce until SHA256(header) starts with "7482"
+       │
+       ▼
+  Append block to blockchain.json (permanent, immutable)
+       │
+       ▼
+  Return { blockHeight, blockHash }
+       │
+       ▼
+  Backend logs: "[BLOCKCHAIN] Ticket TICKET-xxx → block #N hash=7482..."
 ```
 
 ---
 
-## 4. Architecture — Component Diagram
+## 5. Architecture — Component Diagram
 
 ```
 ┌─────────────────── DOCKER NETWORK: railway-network ───────────────────────┐
@@ -269,9 +375,8 @@ A production-grade railway ticketing platform built for Bangladesh Railway. Ever
 │  ┌──────────────────────┐              ┌─────────────────────────────┐   │
 │  │  mongodb   :27017    │              │  blockchain   :5001         │   │
 │  │  MongoDB 5           │              │  Python Flask + PoW         │   │
-│  │  Volume:             │              │  Volume: blockchain-data     │   │
-│  │  mongodb-data        │              └──────────────────────────── ┘   │
-│  └──────────────────────┘                                                 │
+│  │  Volume: mongodb-data│              │  Volume: blockchain-data    │   │
+│  └──────────────────────┘              └─────────────────────────────┘   │
 │                                                                            │
 │  ── Hyperledger Fabric (Optional) ───────────────────────────────────    │
 │  ┌──────────┐ ┌──────────┐ ┌──────────┐ ┌──────────┐ ┌──────────┐      │
@@ -309,22 +414,102 @@ A production-grade railway ticketing platform built for Bangladesh Railway. Ever
          │ prevBlockHash links to:
          ▼
   ┌──────────────────────────────────────────────┐
-  │  Block #N-1                                  │
-  │   blockHash: "7482a3b8f..."                  │
+  │  Block #N-1  blockHash: "7482a3b8f..."       │
   └──────────────────────────────────────────────┘
-
-  TRANSACTION TYPES RECORDED AS BLOCKS
-  ─────────────────────────────────────
-  USER_REGISTRATION  → new passenger registers
-  USER_LOGIN         → any user logs in
-  TICKET_BOOKING     → passenger books a ticket
-  TICKET_CANCELLATION→ passenger cancels a ticket
-  payment            → wallet payment transaction
 ```
 
 ---
 
-## 5. Technology Stack
+## 6. Architecture — Cloud Deployment Environment
+
+```
+╔══════════════════════════════════════════════════════════════════════════════╗
+║                    CLOUD ENVIRONMENT ARCHITECTURE                           ║
+║           KVM VPS — Ubuntu 22.04 LTS — 8 Core · 12 GB RAM · 250 GB SSD    ║
+╚══════════════════════════════════════════════════════════════════════════════╝
+
+  INTERNET
+      │
+      │  HTTPS :443  /  HTTP :80
+      ▼
+┌─────────────────────────────────────────────────────────────────────────┐
+│                     NGINX REVERSE PROXY                                  │
+│                  (SSL Termination · Load Balancing)                      │
+│                                                                          │
+│  yourdomain.com          → Passenger App  :3001                         │
+│  yourdomain.com/inspect  → Inspector App  :3002                         │
+│  admin.yourdomain.com    → Admin Dashboard :3003                        │
+│  yourdomain.com/api/     → Backend API    :3000                         │
+│  yourdomain.com/socket.io→ Socket.IO      :3000 (WebSocket upgrade)    │
+│                                                                          │
+│  SSL: Let's Encrypt (Certbot auto-renew)                                │
+└──────────────────────────────────┬──────────────────────────────────────┘
+                                   │
+                                   ▼
+┌─────────────────────────────────────────────────────────────────────────┐
+│                   DOCKER COMPOSE STACK                                   │
+│                 (Internal Network: railway-network)                      │
+│                                                                          │
+│  ┌───────────────┐  ┌───────────────┐  ┌───────────────────────────┐   │
+│  │ passenger-app │  │ inspector-app │  │    admin-dashboard        │   │
+│  │ Nginx :3001   │  │ Nginx :3002   │  │    Nginx + Socket.IO      │   │
+│  │ React 18      │  │ React 18      │  │    :3003                  │   │
+│  └───────────────┘  └───────────────┘  └───────────────────────────┘   │
+│                                                                          │
+│  ┌───────────────────────────────────────────────────────────────────┐  │
+│  │               Node.js Backend  :3000                              │  │
+│  │     Express · Socket.IO · JWT · Helmet · Joi · Mongoose           │  │
+│  └──────────────────────┬──────────────────────┬──────────────────── ┘  │
+│                         │                      │                         │
+│  ┌──────────────────────┐    ┌──────────────────────────────────────┐   │
+│  │  MongoDB  :27017     │    │  Python Blockchain  :5001            │   │
+│  │  Volume: mongodb-data│    │  Volume: blockchain-data             │   │
+│  │  (persistent)        │    │  (persistent — blockchain.json)      │   │
+│  └──────────────────────┘    └──────────────────────────────────────┘   │
+│                                                                          │
+│  ┌───────────────────────────────────────────────────────────────────┐  │
+│  │  Hyperledger Fabric (Optional)                                    │  │
+│  │  orderer0 :7050 · orderer1 :7052 · orderer2 :7053                │  │
+│  │  peer0 :7051 · peer1 :8051 · couchdb0 · couchdb1                 │  │
+│  └───────────────────────────────────────────────────────────────────┘  │
+└─────────────────────────────────────────────────────────────────────────┘
+
+  FIREWALL (UFW)
+  ──────────────
+  ✓ ALLOW   :22   SSH
+  ✓ ALLOW   :80   HTTP  (Nginx)
+  ✓ ALLOW   :443  HTTPS (Nginx + SSL)
+  ✗ DENY    :3000  Block direct backend access
+  ✗ DENY    :3001  Block direct app access
+  ✗ DENY    :3002  Block direct app access
+  ✗ DENY    :3003  Block direct app access
+  ✗ DENY    :5001  Block direct blockchain access
+  ✗ DENY    :27017 Block direct MongoDB access
+
+  STORAGE VOLUMES (Docker persistent)
+  ─────────────────────────────────────
+  mongodb-data       → All MongoDB collections (tickets, users, trains...)
+  blockchain-data    → blockchain.json, users.json, wallets.json, mempool.json
+
+  BACKUP STRATEGY
+  ────────────────
+  MongoDB   → mongodump daily → compressed archive → off-site storage
+  Blockchain→ copy blockchain-data volume → off-site storage
+  .env      → encrypted backup → secure vault
+
+  CLOUD SCALING PATH
+  ───────────────────
+  Current:  Single KVM VPS (8 core / 12 GB / 250 GB SSD)
+  Scale-up: Increase VPS resources (vertical scaling)
+  Scale-out: Add load balancer → multiple backend containers
+             MongoDB Atlas (managed) → replace self-hosted MongoDB
+             Separate blockchain node on dedicated VPS
+             CDN for frontend static assets
+```
+
+---
+
+## 7. Technology Stack
 
 ### Backend — Node.js API Server
 
@@ -368,20 +553,23 @@ A production-grade railway ticketing platform built for Bangladesh Railway. Ever
 | pycryptodome | Elliptic curve cryptography |
 | hashlib (stdlib) | SHA-256 Proof-of-Work mining |
 
-### Infrastructure & DevOps
+### Infrastructure & Cloud
 
 | Tool | Purpose |
 |---|---|
 | Docker + Docker Compose | All services containerised and orchestrated |
 | MongoDB 5 | Primary off-chain data store |
-| Nginx | Static frontend serving (all 3 apps) |
+| Nginx | Reverse proxy + SSL termination + static serving |
+| Let's Encrypt / Certbot | Free SSL certificates with auto-renewal |
+| UFW | Ubuntu firewall — port whitelist |
 | Hyperledger Fabric 2.x | Enterprise permissioned blockchain (optional) |
 | CouchDB 3.1 | Hyperledger Fabric world-state database |
-| Ubuntu 22.04 LTS | Recommended host OS |
+| Ubuntu 22.04 LTS | Cloud VPS operating system |
+| KVM VPS | 8 core · 12 GB RAM · 250 GB SSD |
 
 ---
 
-## 6. Fresh Ubuntu 22.04 Setup — Full Guide
+## 8. Fresh Ubuntu 22.04 Setup — Full Guide
 
 ### Step 1 — System update & base tools
 
@@ -455,7 +643,7 @@ cp .env.example .env
 nano .env
 ```
 
-Fill in all values — see [Section 7](#7-environment-variables).
+Fill in all values — see [Section 9](#9-environment-variables).
 
 ### Step 7 — Build and start everything
 
@@ -463,35 +651,26 @@ Fill in all values — see [Section 7](#7-environment-variables).
 docker compose up --build -d
 ```
 
-Builds and starts: MongoDB, Python blockchain, Node.js backend, passenger app, inspector app, admin dashboard, Hyperledger Fabric nodes.
-
 ### Step 8 — Seed the database
 
 ```bash
-# 1. Create super admin account
 docker exec railway-backend node scripts/seed-db.js
-
-# 2. Seed 50+ Bangladesh Railway stations
 docker exec railway-backend node scripts/seedStations.js
-
-# 3. Seed 8 real Bangladesh Railway routes
 docker exec railway-backend node scripts/seedRoutes.js
-
-# 4. Seed 14 trains with carriages + 30-day schedules
 docker exec railway-backend node scripts/seedTrains.js
 ```
 
 ### Step 9 — Verify
 
 ```bash
-docker ps                              # all containers running
-curl http://localhost:3000/health      # returns: OK
-curl http://localhost:5001/health      # returns: {"status":"ok"}
+docker ps
+curl http://localhost:3000/health      # OK
+curl http://localhost:5001/health      # {"status":"ok"}
 ```
 
 ---
 
-## 7. Environment Variables
+## 9. Environment Variables
 
 Create **two identical files**: `.env` (project root) and `backend/.env`
 
@@ -531,7 +710,6 @@ FABRIC_CHAINCODE=ticket
 EMAIL_HOST=smtp.gmail.com
 EMAIL_PORT=587
 EMAIL_USER=your_gmail@gmail.com
-# Gmail → Account → Security → 2-Step Verification → App Passwords
 EMAIL_PASS=xxxx_xxxx_xxxx_xxxx
 
 # ── CORS ─────────────────────────────────────────────────────
@@ -544,53 +722,28 @@ COUCHDB_PASSWORD=adminpw
 
 ---
 
-## 8. Start / Stop the System
+## 10. Start / Stop the System
 
 ```bash
-# Start all services
-docker compose up -d
-
-# Stop all services (data preserved)
-docker compose down
-
-# Full reset — deletes ALL data including MongoDB and blockchain
-docker compose down -v
-
-# Rebuild after code changes
-docker compose up --build -d
-
-# Rebuild a specific service only
-docker compose up -d --build backend
-docker compose up -d --build admin-dashboard
-docker compose up -d --build blockchain
-
-# Restart one service
-docker compose restart backend
-docker compose restart blockchain
-
-# Live logs
-docker logs railway-backend -f
+docker compose up -d                        # Start all
+docker compose down                         # Stop (data preserved)
+docker compose down -v                      # Full reset (deletes data)
+docker compose up --build -d               # Rebuild after code changes
+docker compose up -d --build backend       # Rebuild one service
+docker compose restart backend             # Restart one service
+docker logs railway-backend -f             # Live logs
 docker logs blockchain -f
-docker logs admin-dashboard -f
-docker logs mongodb -f
 ```
 
 ---
 
-## 9. Seed the Database
+## 11. Seed the Database
 
 ```bash
-# Super admin: superadmin@railway.com / Admin@123
-docker exec railway-backend node scripts/seed-db.js
-
-# 50+ stations with GPS, division, zone
-docker exec railway-backend node scripts/seedStations.js
-
-# 8 Bangladesh Railway routes
-docker exec railway-backend node scripts/seedRoutes.js
-
-# 14 trains, carriages, 30-day schedules
-docker exec railway-backend node scripts/seedTrains.js
+docker exec railway-backend node scripts/seed-db.js       # superadmin
+docker exec railway-backend node scripts/seedStations.js  # 50+ stations
+docker exec railway-backend node scripts/seedRoutes.js    # 8 routes
+docker exec railway-backend node scripts/seedTrains.js    # 14 trains
 ```
 
 All seed scripts clear their collection before inserting — safe to re-run.
@@ -621,7 +774,7 @@ All seed scripts clear their collection before inserting — safe to re-run.
 
 ---
 
-## 10. Default Logins & Ports
+## 12. Default Logins & Ports
 
 ### Service Ports
 
@@ -649,7 +802,7 @@ All seed scripts clear their collection before inserting — safe to re-run.
 
 ---
 
-## 11. User Roles & Permissions
+## 13. User Roles & Permissions
 
 ```
 superadmin
@@ -696,78 +849,47 @@ passenger
 
 ---
 
-## 12. How the System Works — End to End
-
-### Passenger Journey
+## 14. How the System Works — End to End
 
 ```
 REGISTER
-  Enter: name, email, mobile, NID/passport, date of birth, gender, password
-  System sends 6-digit OTP to email (expires in 10 minutes)
+  Enter: name, email, mobile, NID/passport, DOB, gender, password
+  System sends 6-digit OTP to email (expires 10 minutes)
   Passenger enters OTP → account created
   Sensitive fields (NID, DOB, mobile) encrypted with AES-256-GCM
-  Blockchain wallet created automatically with ৳20,000 starting balance
-  USER_REGISTRATION transaction mined as real PoW block
-  Optional: enable MFA (scan QR with Google Authenticator)
+  Blockchain wallet created: ৳20,000 starting balance
+  USER_REGISTRATION mined as PoW block → permanently on chain
+  Optional: enable MFA (Google Authenticator)
 
 LOGIN
-  Enter email + password
-  If MFA enabled → enter 6-digit TOTP from Authenticator app
-  USER_LOGIN transaction mined as real PoW block
-  Receive: JWT access token (15 min) + refresh token (7 days)
-  Axios interceptor silently refreshes access token on 401 — no logout
+  Enter email + password → MFA TOTP if enabled
+  USER_LOGIN mined as PoW block → permanently on chain
+  Receive JWT access token (15 min) + refresh token (7 days)
 
 SEARCH TRAINS
-  Enter: From station → To station → Date
-  System queries all train stops (not just origin/destination)
+  Enter: From → To → Date
+  Queries train stops (intermediate stop support)
   Example: Dhaka→Comilla returns Subarna Express (Dhaka→Chittagong)
-           showing actual departure from Dhaka and arrival at Comilla
-  Results ordered by departure time
 
-SELECT CARRIAGE
-  Choose class: Shovon / Shovon Chair / Snigdha / First Class / AC Berth
-  Seat layout loads — green = available, red = booked for that date
-
-SELECT SEATS
-  Click 1–4 seats (system enforces max 4 active booked seats per passenger)
-  Total = seat count × price per seat for that class
-
-BOOK TICKET
-  Option A: Direct booking (no wallet needed)
-  Option B: Pay from blockchain wallet (enter wallet password)
-             → balance deducted on blockchain service
-  Ticket saved in MongoDB with:
-    • Unique ticket number (TICKET-{timestamp})
-    • SHA-256 integrity hash (ticketNumber + passengerId + trainId + journeyDate)
-    • Passenger's actual boarding / alighting station
-    • Carriage name, seat numbers, price, journey date
-  TICKET_BOOKING transaction mined as PoW block:
-    • Full ticket data in block transaction
-    • Real Proof-of-Work — hash starts with 7482
-    • Permanently linked to chain — tamper-proof
+SELECT & BOOK
+  Choose carriage class → seat layout (green=available, red=booked)
+  Select 1–4 seats → confirm payment (direct or blockchain wallet)
+  Ticket saved in MongoDB + TICKET_BOOKING mined as PoW block
   Admin dashboard updates INSTANTLY via Socket.IO
 
-QR TICKET
-  Passenger views QR code — contains full ticket JSON
-  SHA-256 hash verifiable against MongoDB and blockchain record
-
 ON BOARD
-  Inspector scans passenger QR code
-  System checks: ISSUED status, correct train, correct date, valid hash
-  Inspector marks as USED → permanently updated in MongoDB
+  Inspector scans QR → verifies hash, train, date, status
+  Marks as USED → MongoDB updated permanently
 
-CANCELLATION
-  Passenger selects ticket → sees exact refund amount before confirming
-  Confirms with account password
-  Refund calculated by hours remaining before departure
-  If wallet was used → refund credited back to blockchain wallet
-  TICKET_CANCELLATION transaction mined as PoW block
+CANCEL
+  Passenger sees refund estimate → confirms with password
+  Refund credited to wallet → TICKET_CANCELLATION mined as PoW block
   Admin dashboard updates INSTANTLY via Socket.IO
 ```
 
 ---
 
-## 13. Ticket Booking Flowchart
+## 15. Ticket Booking Flowchart
 
 ```
 START
@@ -776,66 +898,47 @@ START
 Enter: From Station → To Station → Date
   │
   ▼
-Query trains where stops contain both stations (MongoDB $all)
-Filter: fromStop index < toStop index (direction check)
-  │
-  ├── No trains found ──────────────────────────► "No trains available"
-  │
+Query trains (MongoDB $all on stops) + direction filter
+  ├── No trains ───────────────────────► "No trains available"
   ▼
-Display matching trains with departure/arrival times for the leg
-  │
-  ▼
-Select train → select carriage → load seat layout (dynamic from tickets)
+Select train → carriage → seat layout
   │
   ▼
 Select 1–4 seats
   │
   ▼
-Check seats not in existing ISSUED/USED tickets for that train+date
-  │
-  ├── Seat taken ───────────────────────────────► "Seat already booked"
+Seat available?  ── NO ──────────────► "Seat already booked"
+  │ YES
+  ▼
+Passenger < 4 active tickets?  ── NO ► "Max 4 seats limit"
+  │ YES
+  ▼
+Blockchain wallet payment?
+  ├── YES → Wallet password → deduct balance
+  └── NO  → Proceed direct
   │
   ▼
-Check passenger has < 4 active (ISSUED/USED) tickets
-  │
-  ├── At limit ────────────────────────────────► "Max 4 seats per passenger"
-  │
-  ▼
-Pay with blockchain wallet?
-  │
-  ├── YES → Enter wallet password
-  │           ├── WRONG ──────────────────────► "Invalid blockchain password"
-  │           └── OK → Deduct amount from wallet balance
-  │
-  └── NO → Proceed (post-paid / cash equivalent)
-  │
-  ▼
-Save Ticket to MongoDB
+Save Ticket → MongoDB
   │
   ▼
 Generate SHA-256 integrity hash
   │
   ▼
-Emit Socket.IO event → Admin dashboard updates instantly
+Emit Socket.IO → Admin dashboard instant update
   │
   ▼
-Mine TICKET_BOOKING block on Python blockchain (async, non-blocking)
-  │   Build tx → add to mempool → mine_next_block()
-  │   Nonce++ until SHA256(header) starts with 7482
-  │   Append block to blockchain.json
+Mine TICKET_BOOKING block (async)
+  nonce++ until SHA256(header) starts with "7482"
   │
   ▼
-[Hyperledger Fabric enabled?] → Submit to Fabric chaincode (optional)
-  │
-  ▼
-Return QR-coded ticket to passenger
+Return QR ticket to passenger
   │
 END
 ```
 
 ---
 
-## 14. Refund & Cancellation Policy
+## 16. Refund & Cancellation Policy
 
 | Time Before Departure | Refund |
 |---|---|
@@ -844,116 +947,50 @@ END
 | 0 to 24 hours | 25 % |
 | After departure | 0 % |
 
-**Rules:**
-- Passenger sees the exact refund amount before confirming cancellation
-- Account password required to confirm cancellation
-- If ticket was paid via blockchain wallet → refund credited back automatically
-- Cancelled tickets cannot be reused or re-cancelled
-- Policy thresholds are configurable by admin (Refund Policy section)
-- If no policy is configured, the above defaults apply automatically
-- Every cancellation is mined as a PoW block recording refund details
+- Passenger sees exact refund amount before confirming
+- Account password required to confirm
+- Wallet payments → refund credited back automatically
+- Every cancellation mined as a PoW block with full refund record
+- Policy thresholds configurable by admin
 
 ---
 
-## 15. Real-Time Updates — WebSocket
+## 17. Real-Time Updates — WebSocket
 
-Socket.IO is used to push live updates to the admin dashboard the moment a passenger action occurs — no polling, no page refresh.
-
-```
-Event Flow:
-───────────
-Passenger books ticket
-  → Node.js emits: io.emit('ticket:booked', { ticketNumber, passengerName, ... })
-  → Admin dashboard receives instantly
-  → fetchTickets() + fetchChainData() called
-  → Ticket counts, revenue, available seats update in < 1 second
-
-Passenger cancels ticket
-  → Node.js emits: io.emit('ticket:cancelled', { ticketNumber, refundAmount, ... })
-  → Admin dashboard receives instantly
-  → Cancelled count updates, available seats restored
-
-New user registers
-  → Node.js emits: io.emit('user:registered', { userId, name, email, role })
-  → Total Users count updates instantly
-
-User logs in
-  → Node.js emits: io.emit('user:login', { userId, email, role })
-  → Blockchain ledger refresh triggered
-```
-
-| Socket Event | Triggered By | Admin Dashboard Effect |
+| Socket Event | Triggered When | Admin Dashboard Effect |
 |---|---|---|
-| `ticket:booked` | Ticket booking | Ticket counts, revenue, available seats |
-| `ticket:cancelled` | Ticket cancellation | Cancelled count, seat availability |
-| `user:registered` | New registration | Total users, passenger list |
-| `user:login` | Any login | Blockchain ledger stats |
+| `ticket:booked` | Passenger books ticket | Ticket counts, revenue, available seats update instantly |
+| `ticket:cancelled` | Passenger cancels ticket | Cancelled count, seat availability restored instantly |
+| `user:registered` | New passenger registers | Total users, passenger list refreshed |
+| `user:login` | Any user logs in | Blockchain ledger stats refreshed |
 
-Polling every 30 seconds remains as fallback for any missed events.
+Polling every 30 seconds runs as fallback for any missed events.
 
 ---
 
-## 16. Notification System
-
-When admin cancels or reschedules a train:
+## 18. Notification System
 
 ```
-Admin selects train → Cancel / Reschedule
-  │
-  ├── Cancel:     enter reason
-  └── Reschedule: new date + new departure time + new arrival time
-  │
-  ▼
-Backend finds all tickets on that train for that affected date
-  │
-  ▼
-Finds all affected users (passengers, inspectors, station operators)
-  │
-  ▼
-For each affected user:
-  ┌─ Creates Notification record in MongoDB
-  │    { type: TRAIN_CANCELLED | TRAIN_RESCHEDULED,
-  │      title, message, trainNumber, trainName,
-  │      isRead: false, emailSent: false }
-  │
-  └─ Sends HTML email via Gmail SMTP
-       Red header  → train cancelled
-       Blue header → train rescheduled
-  │
-  ▼
-Passenger app polls /notifications every 15 seconds
-  │
-  ▼
-Bell icon shows red badge with unread count
-  │
-  ▼
-Toast notification appears bottom-right corner
-  │
-  ▼
-Passenger clicks bell → panel opens → all marked as read
+Admin cancels/reschedules train
+  → Backend finds all affected tickets + users
+  → Creates Notification in MongoDB per user
+  → Sends HTML email (red=cancelled, blue=rescheduled) via Gmail SMTP
+  → Passenger app polls /notifications every 15 seconds
+  → Bell badge shows unread count
+  → Toast notification bottom-right
+  → Click bell → panel opens → marked as read
 
-Admin Notifications tab:
-  All sent notifications with:
+Admin Notifications tab shows:
   User Name | Email | Role | Type | Train | Message | Email Sent | Read | Time
 ```
 
 ---
 
-## 17. Blockchain — How It Actually Works
+## 19. Blockchain — How It Actually Works
 
 ### Python Custom Proof-of-Work Blockchain (Port 5001)
 
-This is not a database pretending to be a blockchain. It is a real blockchain with real SHA-256 Proof-of-Work mining. Every hash starts with `7482`.
-
-**Events recorded as blocks:**
-
-| Event | Transaction Type | Data Stored |
-|---|---|---|
-| User registers | `USER_REGISTRATION` | userId, name, email, role, IP, timestamp |
-| User logs in | `USER_LOGIN` | userId, name, email, role, IP, timestamp |
-| Ticket booked | `TICKET_BOOKING` | ticket#, passenger, train, route, date, amount, integrity hash |
-| Ticket cancelled | `TICKET_CANCELLATION` | ticket#, passenger, train, reason, refund amount, refund % |
-| Wallet payment | `payment` | sender, receiver, amount |
+This is not a simulation. It is a real blockchain with real SHA-256 Proof-of-Work mining. Every block hash starts with `7482`.
 
 **Block Structure:**
 ```json
@@ -970,16 +1007,11 @@ This is not a database pretending to be a blockchain. It is a real blockchain wi
   },
   "tx_count": 2,
   "txs": [
-    {
-      "type": "coinbase",
-      "txid": "85c3a159...",
-      "amount": 5000000000
-    },
+    { "type": "coinbase", "txid": "85c3a159...", "amount": 5000000000 },
     {
       "type": "TICKET_BOOKING",
       "txid": "e247a04f...",
       "ticket_number": "TICKET-1776843330",
-      "passenger_id": "683abc...",
       "passenger_name": "Rajib Das",
       "train_number": "711",
       "train_name": "Subarna Express",
@@ -996,19 +1028,7 @@ This is not a database pretending to be a blockchain. It is a real blockchain wi
 }
 ```
 
-**Block hash starts with `7482` — that is real Proof-of-Work.**
-
-**Mining flow for every event:**
-```
-Backend → POST /api/record/ticket (or /user-register, /user-login, /cancellation)
-  → Python service builds transaction dict with SHA-256 txid
-  → Adds tx to mempool.json
-  → Calls mine_next_block()
-  → Increments nonce until SHA256(header) starts with 7482
-  → Appends block to blockchain.json
-  → Returns { blockHeight, blockHash }
-  → Backend logs: "[BLOCKCHAIN] Ticket TICKET-xxx → block #5 hash=74824cd9..."
-```
+**Block hash starts with `7482` — real Proof-of-Work.**
 
 **Blockchain API Endpoints:**
 
@@ -1020,8 +1040,6 @@ Backend → POST /api/record/ticket (or /user-register, /user-login, /cancellati
 | POST | `/api/record/user-login` | Mine user login as block |
 | GET | `/api/blocks` | Full chain as JSON |
 | GET | `/api/chain/stats` | Total blocks, bookings, cancellations, logins |
-| POST | `/api/blockchain/register` | Create blockchain user |
-| POST | `/api/blockchain/login` | Authenticate, get token |
 | POST | `/api/blockchain/pay` | Deduct fare from wallet |
 | POST | `/api/wallet` | Create wallet on registration |
 | GET | `/api/wallet/<userId>` | Wallet balance + info |
@@ -1030,228 +1048,153 @@ Backend → POST /api/record/ticket (or /user-register, /user-login, /cancellati
 | GET | `/blocks` | Block explorer web UI |
 
 **Wallet System:**
-- Every passenger gets a blockchain wallet on registration
-- Starting balance: ৳ 20,000
+- Every passenger gets a blockchain wallet on registration (৳ 20,000 starting balance)
 - Wallet password stored bcrypt-hashed in `users.json`
-- Balance tracked in `users.json` and `wallets.json`
-- Transaction log in `tx_log.json`
 - Refunds credited back automatically on cancellation
 
-### Hyperledger Fabric (Optional — Port 7050–8053)
+### Hyperledger Fabric (Optional)
 
 | Component | Role |
 |---|---|
 | Certificate Authority | Issues MSP identities (port 7054) |
-| 3 Orderers (Raft consensus) | Transaction ordering |
+| 3 Orderers (Raft) | Transaction ordering |
 | 2 Peers | Ledger + chaincode execution |
-| 2 CouchDB | World-state rich query databases |
+| 2 CouchDB | World-state databases |
 | Channel | `railwaychannel` |
 | Chaincode | `ticket` (Go) |
 
-Enable: set `USE_REAL_FABRIC=true` in `.env` and restart backend.
+Enable: `USE_REAL_FABRIC=true` in `.env` → restart backend.
 
 ---
 
-## 18. Security Features
+## 20. Security Features
 
-### Authentication & Session Management
-
-| Feature | Implementation |
-|---|---|
-| Access token | JWT, 15-minute expiry, signed with `JWT_SECRET` |
-| Refresh token | JWT, 7-day expiry, stored in localStorage |
-| Auto-refresh | Axios interceptor catches 401, refreshes silently, retries |
-| MFA | TOTP via speakeasy — Google Authenticator compatible |
-| MFA reset | Super admin can reset MFA for any user |
-
-### Data Encryption at Rest
-
-| Data Field | Method |
-|---|---|
-| Passwords | bcrypt, cost factor 10 — never stored plaintext |
-| NID / Passport | AES-256-GCM, unique random IV per value |
-| Date of birth | AES-256-GCM encrypted |
-| Mobile number | AES-256-GCM encrypted |
-| GCM auth tag | Tampered ciphertext rejected on decryption |
-
-### Ticket Integrity
-
-| Feature | Detail |
-|---|---|
-| Integrity hash | SHA-256 of: ticketNumber + passengerId + trainId + journeyDate |
-| Stored in | MongoDB ticket record AND blockchain block transaction |
-| Verifiable by | Passenger (QR screen) and Inspector (on scan) |
-
-### Network & Access Control
-
-| Feature | Implementation |
-|---|---|
-| Request validation | Joi schemas — types enforced, unknown fields stripped |
-| Route protection | `auth` middleware (JWT verify) + `authorize(roles)` |
-| HTTP security | Helmet: X-Frame-Options, XSS-Protection, HSTS, CSP |
-| CORS | Whitelist only — `CORS_ORIGINS` env var |
-| ETag disabled | No 304 cached responses — always fresh data |
-
-### Audit & Tracking
-
-| Feature | Implementation |
-|---|---|
-| Login location | IP → city/country via geoip-lite, stored per login |
-| Login history | Last 20 logins stored per user |
-| Profile changes | Before/after values logged in `profileupdatelogs` |
-| OTP records | All OTPs stored and visible to admin |
-| Blockchain immutability | All key events permanently recorded as PoW blocks |
+| Category | Feature | Implementation |
+|---|---|---|
+| Auth | Access token | JWT 15-min, signed HS256 |
+| Auth | Refresh token | JWT 7-day |
+| Auth | Auto-refresh | Axios interceptor — silent retry on 401 |
+| Auth | MFA | TOTP via speakeasy (Google Authenticator) |
+| Encryption | Passwords | bcrypt cost 10 |
+| Encryption | NID / Passport | AES-256-GCM, random IV per value |
+| Encryption | Date of birth | AES-256-GCM |
+| Encryption | Mobile number | AES-256-GCM |
+| Integrity | Ticket hash | SHA-256 stored in MongoDB + blockchain |
+| Network | Headers | Helmet: XSS, X-Frame, HSTS, CSP |
+| Network | CORS | Whitelist only via CORS_ORIGINS |
+| Network | Validation | Joi — unknown fields stripped |
+| Audit | Login tracking | IP → city/country, stored per login |
+| Audit | Login history | Last 20 logins per user |
+| Audit | Profile changes | Before/after logged in profileupdatelogs |
+| Blockchain | Immutability | All events as PoW blocks — tamper-proof |
 
 ---
 
-## 19. API Reference
+## 21. API Reference
 
-### Auth  `/api/auth`
+### Auth `/api/auth`
 
 | Method | Path | Auth | Description |
 |---|---|---|---|
 | POST | `/register/start` | None | Send OTP to email |
 | POST | `/register/verify` | None | Verify OTP, activate account |
-| POST | `/login` | None | Login — returns access + refresh tokens |
-| POST | `/refresh` | None | Get new access token from refresh token |
+| POST | `/login` | None | Login — access + refresh tokens |
+| POST | `/refresh` | None | Refresh access token |
 | GET | `/me` | JWT | Current user profile |
-| POST | `/mfa/setup` | JWT | Setup Google Authenticator |
-| POST | `/mfa/verify` | JWT | Verify TOTP code |
 
-### Passenger  `/api/passenger`
+### Passenger `/api/passenger`
 
 | Method | Path | Description |
 |---|---|---|
-| GET | `/trains/search?from=&to=&date=` | Search (supports intermediate stops) |
-| GET | `/trains/:id` | Train details |
-| GET | `/stations` | All stations |
+| GET | `/trains/search?from=&to=&date=` | Search trains (intermediate stops) |
 | GET | `/seats?trainId=&date=&carriageName=` | Real-time seat availability |
 | POST | `/tickets/book` | Book ticket |
 | GET | `/tickets/my` | My tickets |
-| POST | `/tickets/:id/cancel` | Cancel ticket (password required) |
-| GET | `/tickets/:id/refund-estimate` | Refund preview before cancelling |
-| GET | `/refund-policy` | Active refund policy |
-| GET | `/tickets/:id/qr` | QR code image |
+| POST | `/tickets/:id/cancel` | Cancel (password required) |
+| GET | `/tickets/:id/refund-estimate` | Refund preview |
+| GET | `/tickets/:id/qr` | QR code |
 | GET | `/tickets/:id/verify` | Verify integrity hash |
-| POST | `/waitlist/join` | Join waiting list |
-| DELETE | `/waitlist/:id` | Leave waiting list |
-| GET | `/waitlist/my` | My waiting list entries |
 | GET | `/notifications` | My notifications |
 | PUT | `/notifications/read` | Mark all read |
-| POST | `/profile/request-otp` | OTP for profile update |
-| PUT | `/profile/update` | Update profile |
-| GET | `/wallet/transactions` | Blockchain wallet history |
+| PUT | `/profile/update` | Update profile (OTP required) |
+| GET | `/wallet/transactions` | Wallet history |
 
-### Admin  `/api/admin`
+### Admin `/api/admin`
 
 | Method | Path | Description |
 |---|---|---|
-| GET | `/users` | All users |
+| GET | `/tickets` | All tickets |
 | GET | `/passengers` | All passengers + login history |
-| GET | `/tickets` | All tickets (filter: status, date, train) |
 | GET | `/trains` | All trains |
-| POST | `/trains` | Add train |
-| PUT | `/trains/:id` | Update train |
-| DELETE | `/trains/:id` | Delete train |
-| GET | `/routes` | All routes |
-| POST | `/routes` | Create route |
-| PUT | `/routes/:id` | Update route |
-| DELETE | `/routes/:id` | Delete route |
-| GET | `/stations` | All stations |
-| POST | `/stations` | Add station |
-| DELETE | `/stations/:id` | Delete station |
-| POST | `/trains/:id/cancel-reschedule` | Cancel/reschedule + notify users |
-| GET | `/notifications` | Admin's own notifications |
-| GET | `/notifications/all` | All notifications (full admin view) |
+| POST | `/trains/:id/cancel-reschedule` | Cancel/reschedule + notify |
+| GET | `/notifications/all` | All notifications |
 | GET | `/revenue` | Revenue reports |
-| GET | `/blockchain/chain` | Full blockchain (proxied from Python service) |
+| GET | `/blockchain/chain` | Live blockchain |
 | GET | `/blockchain/stats` | Chain statistics |
 | GET | `/blockchain/wallets` | All wallet balances |
 
-### Super Admin  `/api/superadmin`
+### Super Admin `/api/superadmin`
 
 | Method | Path | Description |
 |---|---|---|
-| GET | `/users` | All users with decrypted sensitive fields |
+| GET | `/users` | All users + decrypted fields |
 | POST | `/users` | Create user (any role) |
-| PUT | `/users/:id` | Edit user, set password, reset MFA, change role |
+| PUT | `/users/:id` | Edit / reset MFA / change role |
 | DELETE | `/users/:id` | Delete user |
-| GET | `/revenue` | Revenue reports |
 
-### Inspector  `/api/inspector`
+### Inspector `/api/inspector`
 
 | Method | Path | Description |
 |---|---|---|
 | POST | `/tickets/verify` | Verify QR ticket |
-| POST | `/tickets/:id/use` | Mark ticket as USED |
+| POST | `/tickets/:id/use` | Mark as USED |
 | POST | `/tickets/:id/flag` | Flag suspicious ticket |
 
 ---
 
-## 20. Seed Scripts
+## 22. Seed Scripts
 
 ```bash
-# Run all in order (inside backend container)
-
 docker exec railway-backend node scripts/seed-db.js
 # Creates: superadmin@railway.com / Admin@123
 
 docker exec railway-backend node scripts/seedStations.js
-# Creates: 50+ stations with GPS, division, district, zone, neighbors
+# 50+ stations with GPS, division, zone
 
 docker exec railway-backend node scripts/seedRoutes.js
-# Creates 8 routes:
-#   Dhaka–Chittagong Mainline       (10 stops)
-#   Dhaka–Sylhet Mainline           (8 stops)
-#   Dhaka–Khulna Mainline           (4 stops)
-#   Dhaka–Rajshahi Mainline         (6 stops)
-#   Dhaka–Mymensingh Line           (5 stops)
-#   Chittagong–Cox's Bazar Line     (4 stops)
-#   Dhaka–Rajshahi via Santahar     (5 stops)
-#   Rajshahi–Rohanpur Line          (3 stops)
+# 8 routes (Dhaka–Chittagong, Dhaka–Sylhet, Dhaka–Khulna,
+#           Dhaka–Rajshahi, Dhaka–Mymensingh, Ctg–Cox's Bazar,
+#           Dhaka–Rajshahi via Santahar, Rajshahi–Rohanpur)
 
 docker exec railway-backend node scripts/seedTrains.js
-# Creates 14 trains (7 routes × up/down direction)
-# Each train: all carriage classes + 30 days of schedules from today
+# 14 trains (7 routes × up/down) — all carriages + 30-day schedules
 
-# Utility scripts
 docker exec railway-backend node scripts/encryptExistingUsers.js
-# Re-encrypts sensitive user fields (run after ENCRYPTION_KEY change)
+# Re-encrypt sensitive fields (after ENCRYPTION_KEY change)
 
 docker exec railway-backend node scripts/create-indexes.js
-# Creates MongoDB indexes for query performance
+# MongoDB performance indexes
 ```
 
 ---
 
-## 21. Hyperledger Fabric (Optional)
+## 23. Hyperledger Fabric (Optional)
 
 ```bash
-# Generate certificates
 cd blockchain
 bash scripts/generate-certs.sh
-
-# Start Fabric network
 bash scripts/start-network.sh
-
-# Create channel
 bash scripts/create-channel.sh
-
-# Deploy chaincode
 bash scripts/deploy-chaincode.sh
-
-# Enroll admin wallet identity
 cd ..
 node scripts/enroll-users.js
-
-# Enable in backend
 # Set USE_REAL_FABRIC=true in .env
 docker compose restart backend
 ```
 
 ---
 
-## 22. Production Deployment
+## 24. Production Deployment
 
 ### VPS Requirements
 
@@ -1265,9 +1208,8 @@ docker compose restart backend
 ### Generate Secure Keys
 
 ```bash
-# Run three times — one output for each of:
-#   JWT_SECRET, JWT_REFRESH_SECRET, ENCRYPTION_KEY
 node -e "console.log(require('crypto').randomBytes(64).toString('hex'))"
+# Run 3 times: JWT_SECRET, JWT_REFRESH_SECRET, ENCRYPTION_KEY
 ```
 
 ### Nginx Reverse Proxy
@@ -1277,7 +1219,6 @@ server {
     listen 80;
     server_name yourdomain.com;
 
-    # Backend API + WebSocket
     location /api/ {
         proxy_pass http://localhost:3000;
         proxy_http_version 1.1;
@@ -1287,7 +1228,6 @@ server {
         proxy_set_header X-Real-IP $remote_addr;
     }
 
-    # Socket.IO
     location /socket.io/ {
         proxy_pass http://localhost:3000;
         proxy_http_version 1.1;
@@ -1295,168 +1235,119 @@ server {
         proxy_set_header Connection "upgrade";
     }
 
-    # Passenger app
-    location / {
-        proxy_pass http://localhost:3001;
-    }
+    location / { proxy_pass http://localhost:3001; }
 }
 ```
 
-### SSL Certificate
+### SSL, Firewall, Boot
 
 ```bash
 sudo apt install certbot python3-certbot-nginx
 sudo certbot --nginx -d yourdomain.com
-```
 
-### Firewall
-
-```bash
-sudo ufw allow 22/tcp    # SSH
-sudo ufw allow 80/tcp    # HTTP
-sudo ufw allow 443/tcp   # HTTPS
-sudo ufw deny 3000/tcp   # block direct backend
-sudo ufw deny 5001/tcp   # block direct blockchain
-sudo ufw deny 27017/tcp  # block direct MongoDB
+sudo ufw allow 22/tcp && sudo ufw allow 80/tcp && sudo ufw allow 443/tcp
+sudo ufw deny 3000/tcp && sudo ufw deny 5001/tcp && sudo ufw deny 27017/tcp
 sudo ufw enable
-```
 
-### Docker on Boot
-
-```bash
 sudo systemctl enable docker
 ```
 
 ### MongoDB Backup
 
 ```bash
-# Backup
 docker exec mongodb mongodump \
   --uri="mongodb://admin:PASSWORD@localhost:27017/railway-ticketing?authSource=admin" \
   --out=/backup/$(date +%Y%m%d)
-
-# Restore
-docker exec mongodb mongorestore \
-  --uri="mongodb://admin:PASSWORD@localhost:27017/railway-ticketing?authSource=admin" \
-  /backup/20260422
 ```
 
 ---
 
-## 23. Project Structure
+## 25. Project Structure
 
 ```
 railway-ticketing-blockchain/
 │
 ├── backend/
 │   ├── controllers/
-│   │   ├── authController.js          # register, login, refresh, MFA, OTP
-│   │   ├── passengerController.js     # search, book, cancel, QR, notifications
-│   │   ├── adminController.js         # train mgmt, cancel/reschedule, notifications
+│   │   ├── authController.js          # register, login, MFA, OTP
+│   │   ├── passengerController.js     # search, book, cancel, QR
+│   │   ├── adminController.js         # train mgmt, notify users
 │   │   ├── inspectorController.js     # verify, mark used, flag
-│   │   ├── mfaController.js           # MFA login flow
-│   │   └── superAdminController.js    # user CRUD, revenue reports
+│   │   └── superAdminController.js    # user CRUD, revenue
 │   ├── middleware/
-│   │   ├── auth.js                    # JWT verify → attach req.user
+│   │   ├── auth.js                    # JWT verify
 │   │   ├── authorize.js               # RBAC role check
-│   │   ├── validate.js                # Joi request body schemas
-│   │   └── errorHandler.js            # Global error formatter
+│   │   ├── validate.js                # Joi schemas
+│   │   └── errorHandler.js            # Global error handler
 │   ├── models/
-│   │   ├── User.js                    # users (AES-256 fields, login history)
-│   │   ├── Ticket.js                  # tickets (SHA-256 hash, refund fields)
-│   │   ├── Train.js                   # trains (carriages, schedules, stops)
-│   │   ├── Route.js                   # routes (ordered stops)
-│   │   ├── Station.js                 # stations (GPS, division, zone)
-│   │   ├── Notification.js            # notifications (emailSent, isRead)
-│   │   ├── OTP.js                     # email OTPs (expires in 10 min)
-│   │   ├── WaitList.js                # waitlist entries per train/date/carriage
-│   │   ├── RefundPolicy.js            # configurable refund thresholds
-│   │   ├── Stakeholder.js             # API access stakeholders
-│   │   └── ProfileUpdateLog.js        # profile change audit trail
+│   │   ├── User.js                    # AES-256 fields, login history
+│   │   ├── Ticket.js                  # SHA-256 hash, refund fields
+│   │   ├── Train.js                   # carriages, schedules, stops
+│   │   ├── Route.js                   # ordered stops
+│   │   ├── Station.js                 # GPS, division, zone
+│   │   ├── Notification.js            # emailSent, isRead
+│   │   ├── OTP.js                     # expires 10 min
+│   │   ├── WaitList.js                # per train/date/carriage
+│   │   ├── RefundPolicy.js            # configurable thresholds
+│   │   ├── Stakeholder.js             # API stakeholders
+│   │   └── ProfileUpdateLog.js        # audit trail
 │   ├── routes/
-│   │   ├── authRoutes.js              # /api/auth
-│   │   ├── passengerRoutes.js         # /api/passenger
-│   │   ├── inspectorRoutes.js         # /api/inspector
-│   │   ├── adminRoutes.js             # /api/admin (+ blockchain proxy)
-│   │   ├── superAdminRoutes.js        # /api/superadmin
-│   │   └── stakeholderRoutes.js       # /api/stakeholders
+│   │   ├── authRoutes.js
+│   │   ├── passengerRoutes.js
+│   │   ├── inspectorRoutes.js
+│   │   ├── adminRoutes.js             # + blockchain proxy routes
+│   │   ├── superAdminRoutes.js
+│   │   └── stakeholderRoutes.js
 │   ├── services/
-│   │   ├── blockchainService.js       # Python blockchain + Fabric bridge
-│   │   ├── fabricService.js           # Hyperledger Fabric mock
-│   │   └── realFabricService.js       # Hyperledger Fabric SDK calls
+│   │   ├── blockchainService.js       # Python blockchain bridge
+│   │   ├── fabricService.js           # Fabric mock
+│   │   └── realFabricService.js       # Fabric SDK
 │   ├── utils/
-│   │   ├── encryption.js              # AES-256-GCM encrypt / decrypt
-│   │   ├── refundCalculator.js        # Refund % by policy + hours remaining
-│   │   └── captureLocation.js         # IP geolocation for login tracking
+│   │   ├── encryption.js              # AES-256-GCM
+│   │   ├── refundCalculator.js        # refund % by policy
+│   │   └── captureLocation.js         # IP geolocation
 │   ├── scripts/
-│   │   ├── seed-db.js                 # Create superadmin account
-│   │   ├── seedStations.js            # Seed 50+ Bangladesh Railway stations
-│   │   ├── seedRoutes.js              # Seed 8 routes
-│   │   ├── seedTrains.js              # Seed 14 trains with schedules
-│   │   ├── encryptExistingUsers.js    # Re-encrypt all sensitive user fields
-│   │   └── create-indexes.js          # MongoDB performance indexes
-│   ├── config/
-│   │   └── database.js                # MongoDB connection setup
-│   ├── data/
-│   │   └── bangladeshRailwayData.js   # Station data source
-│   ├── app.js                         # Express app + middleware setup
-│   ├── server.js                      # HTTP server + Socket.IO init
+│   │   ├── seed-db.js
+│   │   ├── seedStations.js
+│   │   ├── seedRoutes.js
+│   │   ├── seedTrains.js
+│   │   ├── encryptExistingUsers.js
+│   │   └── create-indexes.js
+│   ├── app.js                         # Express + middleware
+│   ├── server.js                      # HTTP + Socket.IO
 │   └── Dockerfile
 │
 ├── frontend/
-│   ├── passenger-app/                 # Public booking portal  :3001
-│   │   ├── src/App.js                 # Main app — search, book, QR, notify
-│   │   ├── Dockerfile
-│   │   ├── nginx.conf
-│   │   └── package.json
-│   │
-│   ├── inspector-app/                 # On-board verification  :3002
-│   │   ├── src/App.js                 # QR scan, verify, mark used
-│   │   ├── Dockerfile
-│   │   ├── nginx.conf
-│   │   └── package.json
-│   │
-│   └── admin-dashboard/               # System management      :3003
-│       ├── src/
-│       │   ├── App.js                 # Main app — all admin features
-│       │   └── pages/
-│       │       ├── TrainManagement.js
-│       │       ├── StationManagement.js
-│       │       ├── RouteManagement.js
-│       │       └── RefundPolicy.js
-│       ├── Dockerfile
-│       ├── nginx.conf
-│       └── package.json
+│   ├── passenger-app/    :3001        # Search, book, QR, notify
+│   ├── inspector-app/    :3002        # Scan, verify, mark used
+│   └── admin-dashboard/  :3003        # Full management + ledger
+│       └── src/pages/
+│           ├── TrainManagement.js
+│           ├── StationManagement.js
+│           ├── RouteManagement.js
+│           └── RefundPolicy.js
 │
-├── blockchain-python/                 # Custom PoW blockchain  :5001
-│   ├── run.py                         # Flask app — all API endpoints
-│   ├── adapters/
-│   │   └── bitcoin_backend.py         # Bridge to core Blockchain class
+├── blockchain-python/    :5001
+│   ├── run.py                         # Flask API + all endpoints
+│   ├── adapters/bitcoin_backend.py    # Bridge to Blockchain class
 │   ├── Blockchain/Backend/core/
-│   │   ├── blockchain.py              # Block mining, wallet, TX management
-│   │   ├── block.py                   # Block data structure
-│   │   ├── blockheader.py             # PoW mining loop (nonce increment)
-│   │   └── Tx.py                      # Coinbase transaction builder
-│   ├── templates/                     # HTML block explorer templates
-│   ├── data/
-│   │   ├── blockchain.json            # The live blockchain
-│   │   ├── users.json                 # Wallet users + bcrypt passwords
-│   │   ├── wallets.json               # Wallet balances mirror
-│   │   ├── mempool.json               # Pending transactions queue
-│   │   └── tx_log.json                # Full transaction history
-│   ├── requirements.txt
-│   └── Dockerfile
+│   │   ├── blockchain.py              # Mining, wallet, TX
+│   │   ├── blockheader.py             # PoW loop (hash starts 7482)
+│   │   └── Tx.py                      # Coinbase builder
+│   └── data/
+│       ├── blockchain.json            # Live blockchain
+│       ├── users.json                 # Wallets + bcrypt passwords
+│       ├── wallets.json               # Balances
+│       └── mempool.json               # Pending transactions
 │
 ├── blockchain/                        # Hyperledger Fabric (optional)
 │   ├── chaincode/ticket_contract/     # Go smart contract
-│   ├── config/                        # configtx, crypto-config, core YAML
-│   ├── scripts/                       # start, stop, deploy shell scripts
-│   ├── bin/                           # Fabric peer/orderer binaries
-│   └── organizations/                 # MSP certificates and keys
+│   ├── config/                        # configtx, crypto-config
+│   └── scripts/                       # start, stop, deploy
 │
-├── docker-compose.yml                 # Full stack orchestration
-├── .env                               # Environment variables (not in git)
-├── .env.example                       # Environment template
+├── docker-compose.yml
+├── .env
+├── .env.example
 └── README.md
 ```
 
