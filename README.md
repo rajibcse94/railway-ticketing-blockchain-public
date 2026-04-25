@@ -686,9 +686,9 @@ JWT_REFRESH_SECRET=replace_with_another_64_char_hex
 JWT_EXPIRES_IN=15m
 
 # ── MongoDB ──────────────────────────────────────────────────
-MONGO_URI=mongodb://admin:admin123@mongodb:27017/railway-ticketing?authSource=admin
-MONGO_ROOT_USERNAME=admin
-MONGO_ROOT_PASSWORD=admin123
+MONGO_URI=mongodb://admin:<your@mongodb>:27017/railway-ticketing?authSource=admin
+MONGO_ROOT_USERNAME=<mongodb username>
+MONGO_ROOT_PASSWORD=<mongodb pass>
 
 # ── AES-256-GCM Data Encryption ─────────────────────────────
 # Generate: node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"
