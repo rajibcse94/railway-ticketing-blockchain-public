@@ -795,7 +795,7 @@ All seed scripts clear their collection before inserting — safe to re-run.
 
 | Role | Email | Password |
 |---|---|---|
-| Super Admin | superadmin@railway.com | Admin@123 |
+| Super Admin | <your super admin> | <your password> |
 | Admin | Created by super admin | Set by super admin |
 | Inspector | Created by admin | Set by admin |
 | Passenger | Register via app | Set during registration |
