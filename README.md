@@ -32,6 +32,7 @@ A production-grade railway ticketing platform built for Bangladesh Railway. Ever
 23. [Hyperledger Fabric (Optional)](#23-hyperledger-fabric-optional)
 24. [Production Deployment](#24-production-deployment)
 25. [Project Structure](#25-project-structure)
+26. [Video — User / Admin](#26-video--user--admin)
 
 ---
 
@@ -1350,6 +1351,32 @@ railway-ticketing-blockchain/
 ├── .env.example
 └── README.md
 ```
+
+---
+
+## 26. Video — User / Admin
+
+Two screen-recorded walkthroughs of the live system — one covering the **passenger (user)** journey and one covering the **admin** operations. Both clips live in the public mirror repository (`railway-ticketing-blockchain-public`).
+
+### 🎬 User (Passenger) Walkthrough
+
+Registration with email OTP → train search with intermediate stops → carriage / seat selection → blockchain-wallet payment → QR ticket → cancellation & refund, with each event mined as a Proof-of-Work block in real time.
+
+https://github.com/rajibcse94/railway-ticketing-blockchain-public/raw/main/Video%20Project%207-480.mp4
+
+▶️ **Watch / download:** [Video Project 7-480.mp4](https://github.com/rajibcse94/railway-ticketing-blockchain-public/raw/main/Video%20Project%207-480.mp4)
+
+### 🛠️ Admin Walkthrough
+
+Real-time dashboard updates over Socket.IO, train / route / station management, train cancellation with email + in-app notifications, revenue reports, and the live blockchain ledger / block explorer.
+
+https://github.com/rajibcse94/railway-ticketing-blockchain-public/raw/main/Video%20Project%206-480.mp4
+
+▶️ **Watch / download:** [Video Project 6-480.mp4](https://github.com/rajibcse94/railway-ticketing-blockchain-public/raw/main/Video%20Project%206-480.mp4)
+
+> **Notes**
+> - GitHub auto-embeds video when the **bare raw URL sits on its own line**. If a clip does not render inline on your repo, use the **Watch / download** link instead — or drag-and-drop the `.mp4` directly into the README editor on GitHub to generate an auto-playing `user-attachments` URL.
+> - If the two clips are reversed (i.e. *Video 6* is actually the user demo and *Video 7* the admin demo), just swap the two URLs above.
 
 ---
 
