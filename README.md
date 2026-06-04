@@ -1356,27 +1356,26 @@ railway-ticketing-blockchain/
 
 ## 26. Video — User / Admin
 
-Two screen-recorded walkthroughs of the live system — one covering the **passenger (user)** journey and one covering the **admin** operations. Both clips live in the public mirror repository (`railway-ticketing-blockchain-public`).
+Screen-recorded walkthroughs of the live system. The clips are committed to the public mirror repository (`railway-ticketing-blockchain-public`).
 
 ### 🎬 User (Passenger) Walkthrough
 
 Registration with email OTP → train search with intermediate stops → carriage / seat selection → blockchain-wallet payment → QR ticket → cancellation & refund, with each event mined as a Proof-of-Work block in real time.
 
-https://github.com/rajibcse94/railway-ticketing-blockchain-public/raw/main/Video%20Project%207-480.mp4
+<video src="https://github.com/rajibcse94/railway-ticketing-blockchain-public/raw/main/User_Videos.mp4" controls width="100%"></video>
 
-▶️ **Watch / download:** [Video Project 7-480.mp4](https://github.com/rajibcse94/railway-ticketing-blockchain-public/raw/main/Video%20Project%207-480.mp4)
+▶️ **Watch / download:** [User_Videos.mp4](https://github.com/rajibcse94/railway-ticketing-blockchain-public/raw/main/User_Videos.mp4)
 
-### 🛠️ Admin Walkthrough
+### 🛠️ User + Admin + Inspector Walkthrough
 
-Real-time dashboard updates over Socket.IO, train / route / station management, train cancellation with email + in-app notifications, revenue reports, and the live blockchain ledger / block explorer.
+Real-time admin dashboard updates over Socket.IO, train / route / station management, train cancellation with email + in-app notifications, revenue reports, the live blockchain ledger / block explorer, plus the inspector QR-scan and ticket-verification flow.
 
-https://github.com/rajibcse94/railway-ticketing-blockchain-public/raw/main/Video%20Project%206-480.mp4
+<video src="https://github.com/rajibcse94/railway-ticketing-blockchain-public/raw/main/User_%26_Admin_%26_Insp.mp4" controls width="100%"></video>
 
-▶️ **Watch / download:** [Video Project 6-480.mp4](https://github.com/rajibcse94/railway-ticketing-blockchain-public/raw/main/Video%20Project%206-480.mp4)
+▶️ **Watch / download:** [User_&_Admin_&_Insp.mp4](https://github.com/rajibcse94/railway-ticketing-blockchain-public/raw/main/User_%26_Admin_%26_Insp.mp4)
 
-> **Notes**
-> - GitHub auto-embeds video when the **bare raw URL sits on its own line**. If a clip does not render inline on your repo, use the **Watch / download** link instead — or drag-and-drop the `.mp4` directly into the README editor on GitHub to generate an auto-playing `user-attachments` URL.
-> - If the two clips are reversed (i.e. *Video 6* is actually the user demo and *Video 7* the admin demo), just swap the two URLs above.
+> **To make the videos play inside the README for everyone**
+> The most reliable way to embed a built-in, play-in-place video on GitHub is to **drag-and-drop the `.mp4` into the README editor** (open the README → pencil/Edit icon → drag the file into the text box). GitHub uploads it and auto-inserts a `https://github.com/user-attachments/assets/...` URL that always renders as a native player. If the `<video>` tags above do not render on your repo, replace them with those generated URLs.
 
 ---
 
