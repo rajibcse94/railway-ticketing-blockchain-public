@@ -1364,6 +1364,12 @@ Registration with email OTP → train search with intermediate stops → carriag
 
 <video src="https://github.com/rajibcse94/railway-ticketing-blockchain-public/raw/main/User_Videos.mp4" controls width="100%"></video>
 
+
+
+https://github.com/user-attachments/assets/64165573-eb54-40fb-9f28-171500833368
+
+
+
 ▶️ **Watch / download:** [User_Videos.mp4](https://github.com/rajibcse94/railway-ticketing-blockchain-public/raw/main/User_Videos.mp4)
 
 ### 🛠️ User + Admin + Inspector Walkthrough
@@ -1372,10 +1378,14 @@ Real-time admin dashboard updates over Socket.IO, train / route / station manage
 
 <video src="https://github.com/rajibcse94/railway-ticketing-blockchain-public/raw/main/User_%26_Admin_%26_Insp.mp4" controls width="100%"></video>
 
+
+https://github.com/user-attachments/assets/fc762a64-e9e5-4043-a143-c4679feee4d0
+
+
+
+
 ▶️ **Watch / download:** [User_&_Admin_&_Insp.mp4](https://github.com/rajibcse94/railway-ticketing-blockchain-public/raw/main/User_%26_Admin_%26_Insp.mp4)
 
-> **To make the videos play inside the README for everyone**
-> The most reliable way to embed a built-in, play-in-place video on GitHub is to **drag-and-drop the `.mp4` into the README editor** (open the README → pencil/Edit icon → drag the file into the text box). GitHub uploads it and auto-inserts a `https://github.com/user-attachments/assets/...` URL that always renders as a native player. If the `<video>` tags above do not render on your repo, replace them with those generated URLs.
 
 ---
 
